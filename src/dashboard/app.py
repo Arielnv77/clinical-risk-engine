@@ -5,8 +5,8 @@ Provides a clinical interface to the FastAPI /explain endpoint.
 
 import streamlit as st
 import requests
-
-API_URL = "http://127.0.0.1:8000"
+import os
+API_URL = os.environ.get("API_URL", "http://127.0.0.1:8000")
 
 st.set_page_config(
     page_title="Clinical Risk Engine",
