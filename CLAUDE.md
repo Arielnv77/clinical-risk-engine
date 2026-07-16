@@ -6,35 +6,36 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ML system for predicting 30-day hospital readmission risk in diabetic patients. End-to-end pipeline: data preprocessing → feature engineering → XGBoost model → SHAP explanations → FastAPI serving → Docker deployment.
 
-**Status: early development.** The scaffold exists; the implementation does not yet.
+**Status: working end-to-end.** Training pipeline, API, dashboard, tests, CI and Docker are all implemented and verified. `data/processed/` (model + featurized CSV) is gitignored, so a fresh clone must run the training command below once before the API or Docker image will work.
 
 ## Stack
 
-Python · XGBoost · SHAP · FastAPI · Docker · GitHub Actions
+Python · XGBoost · SHAP · FastAPI · Streamlit · Docker · GitHub Actions
 
 ## Commands
 
-No build system is configured yet. As dependencies and tooling are added, update this section with:
-- `pip install -r requirements.txt` (or equivalent)
-- How to run the API (`uvicorn src.api.main:app --reload`)
-- How to run tests (`pytest tests/`)
-- How to train the model
+- `pip install -r requirements-dev.txt` — installs runtime deps plus pytest/httpx for testing
+- `python -m src.models.train` — cleans `data/raw/diabetic_data.csv`, engineers features, trains the model, and writes `data/processed/{xgb_model.json,xgb_model.pkl,diabetic_data_features.csv,model_metadata.json}`. **Must be run once before the API can start** — those artifacts are gitignored.
+- `uvicorn src.api.main:app --reload` — run the API
+- `streamlit run src/dashboard/app.py` — run the dashboard (expects `API_URL` env var, defaults to `http://127.0.0.1:8000`)
+- `pytest tests/` — run tests. `tests/test_api.py` self-skips if the model hasn't been trained yet; the rest don't need it.
+- `docker compose up` — run API + dashboard together
 
 ## Architecture
 
 ```
 src/
-  data/       # Data loading and cleaning (replace '?' nulls with NaN, drop weight/payer_code)
-  features/   # Feature engineering pipeline
-  models/     # XGBoost training, evaluation, serialization
-  api/        # FastAPI app — inference endpoint + SHAP explanation endpoint
-notebooks/
-  01_eda.ipynb  # Exploratory analysis; establishes which features matter
+  data/       # cleaning.py — raw CSV cleaning ('?' -> NaN, drop weight/payer_code/etc, derive readmitted_30d)
+  features/   # engineer_features() — shared by training and inference, single source of truth
+  models/     # train.py — reproducible training script (see Commands)
+  api/        # FastAPI app — /predict + /explain, schemas.py validates categorical/ID fields against real domain values
+  dashboard/  # Streamlit clinical UI, calls the API over HTTP
+notebooks/    # Original exploratory work (01-04). src/ now has the reproducible equivalent of 02-03.
 data/
   raw/          # diabetic_data.csv (UCI, ~100k encounters, 50 columns) — not committed
-  processed/    # Cleaned/featurized data — not committed
+  processed/    # model + featurized CSV + metadata — not committed, regenerate with `python -m src.models.train`
 docker/         # Dockerfile(s)
-tests/          # pytest suite
+tests/          # pytest suite — test_feature_engineering.py, test_schemas.py, test_api.py
 ```
 
 ### Data

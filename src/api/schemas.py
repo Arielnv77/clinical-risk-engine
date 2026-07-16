@@ -2,16 +2,33 @@
 Pydantic schemas defining the expected shape of API requests and responses.
 """
 
-from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Literal
+
+from pydantic import BaseModel, Field, field_validator
+
+# Valid codes per the UCI IDS_mapping.csv — anything outside these sets is not
+# a real clinical code and must be rejected rather than fed to the model.
+VALID_ADMISSION_TYPE_IDS = frozenset(range(1, 9))
+VALID_DISCHARGE_DISPOSITION_IDS = frozenset(range(1, 31))
+VALID_ADMISSION_SOURCE_IDS = frozenset(set(range(1, 27)) - {16})
+
+Race = Literal["Caucasian", "AfricanAmerican", "Hispanic", "Asian", "Other", "?"]
+Gender = Literal["Female", "Male", "Unknown/Invalid"]
+AgeRange = Literal[
+    "[0-10)", "[10-20)", "[20-30)", "[30-40)", "[40-50)",
+    "[50-60)", "[60-70)", "[70-80)", "[80-90)", "[90-100)"
+]
+MedicationStatus = Literal["No", "Steady", "Up", "Down"]
+YesNo = Literal["Yes", "No"]
+ChangeFlag = Literal["No", "Ch"]
 
 
 class PatientData(BaseModel):
     """Raw patient data as expected from the client, before feature engineering."""
-    
-    race: str = Field(..., example="Caucasian")
-    gender: str = Field(..., example="Female")
-    age: str = Field(..., example="[50-60)")
+
+    race: Race = Field(..., example="Caucasian")
+    gender: Gender = Field(..., example="Female")
+    age: AgeRange = Field(..., example="[50-60)")
     admission_type_id: int = Field(..., example=1)
     discharge_disposition_id: int = Field(..., example=1)
     admission_source_id: int = Field(..., example=7)
@@ -26,31 +43,52 @@ class PatientData(BaseModel):
     diag_2: str = Field(..., example="428")
     diag_3: str = Field(..., example="401")
     number_diagnoses: int = Field(..., example=5)
-    change: str = Field(..., example="No")
-    diabetesMed: str = Field(..., example="Yes")
-    metformin: str = Field(..., example="No")
-    repaglinide: str = Field(..., example="No")
-    nateglinide: str = Field(..., example="No")
-    chlorpropamide: str = Field(..., example="No")
-    glimepiride: str = Field(..., example="No")
-    acetohexamide: str = Field(..., example="No")
-    glipizide: str = Field(..., example="No")
-    glyburide: str = Field(..., example="No")
-    tolbutamide: str = Field(..., example="No")
-    pioglitazone: str = Field(..., example="No")
-    rosiglitazone: str = Field(..., example="No")
-    acarbose: str = Field(..., example="No")
-    miglitol: str = Field(..., example="No")
-    troglitazone: str = Field(..., example="No")
-    tolazamide: str = Field(..., example="No")
-    examide: str = Field(..., example="No")
-    citoglipton: str = Field(..., example="No")
-    insulin: str = Field(..., example="Steady")
-    glyburide_metformin: str = Field(..., alias="glyburide-metformin", example="No")
-    glipizide_metformin: str = Field(..., alias="glipizide-metformin", example="No")
-    glimepiride_pioglitazone: str = Field(..., alias="glimepiride-pioglitazone", example="No")
-    metformin_rosiglitazone: str = Field(..., alias="metformin-rosiglitazone", example="No")
-    metformin_pioglitazone: str = Field(..., alias="metformin-pioglitazone", example="No")
+    change: ChangeFlag = Field(..., example="No")
+    diabetesMed: YesNo = Field(..., example="Yes")
+    metformin: MedicationStatus = Field(..., example="No")
+    repaglinide: MedicationStatus = Field(..., example="No")
+    nateglinide: MedicationStatus = Field(..., example="No")
+    chlorpropamide: MedicationStatus = Field(..., example="No")
+    glimepiride: MedicationStatus = Field(..., example="No")
+    acetohexamide: MedicationStatus = Field(..., example="No")
+    glipizide: MedicationStatus = Field(..., example="No")
+    glyburide: MedicationStatus = Field(..., example="No")
+    tolbutamide: MedicationStatus = Field(..., example="No")
+    pioglitazone: MedicationStatus = Field(..., example="No")
+    rosiglitazone: MedicationStatus = Field(..., example="No")
+    acarbose: MedicationStatus = Field(..., example="No")
+    miglitol: MedicationStatus = Field(..., example="No")
+    troglitazone: MedicationStatus = Field(..., example="No")
+    tolazamide: MedicationStatus = Field(..., example="No")
+    examide: MedicationStatus = Field(..., example="No")
+    citoglipton: MedicationStatus = Field(..., example="No")
+    insulin: MedicationStatus = Field(..., example="Steady")
+    glyburide_metformin: MedicationStatus = Field(..., alias="glyburide-metformin", example="No")
+    glipizide_metformin: MedicationStatus = Field(..., alias="glipizide-metformin", example="No")
+    glimepiride_pioglitazone: MedicationStatus = Field(..., alias="glimepiride-pioglitazone", example="No")
+    metformin_rosiglitazone: MedicationStatus = Field(..., alias="metformin-rosiglitazone", example="No")
+    metformin_pioglitazone: MedicationStatus = Field(..., alias="metformin-pioglitazone", example="No")
+
+    @field_validator("admission_type_id")
+    @classmethod
+    def _validate_admission_type_id(cls, v: int) -> int:
+        if v not in VALID_ADMISSION_TYPE_IDS:
+            raise ValueError(f"admission_type_id must be one of {sorted(VALID_ADMISSION_TYPE_IDS)}")
+        return v
+
+    @field_validator("discharge_disposition_id")
+    @classmethod
+    def _validate_discharge_disposition_id(cls, v: int) -> int:
+        if v not in VALID_DISCHARGE_DISPOSITION_IDS:
+            raise ValueError(f"discharge_disposition_id must be one of {sorted(VALID_DISCHARGE_DISPOSITION_IDS)}")
+        return v
+
+    @field_validator("admission_source_id")
+    @classmethod
+    def _validate_admission_source_id(cls, v: int) -> int:
+        if v not in VALID_ADMISSION_SOURCE_IDS:
+            raise ValueError(f"admission_source_id must be one of {sorted(VALID_ADMISSION_SOURCE_IDS)}")
+        return v
 
     class Config:
         populate_by_name = True

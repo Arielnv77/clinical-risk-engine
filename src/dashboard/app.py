@@ -6,6 +6,7 @@ Provides a clinical interface to the FastAPI /explain endpoint.
 import streamlit as st
 import requests
 import os
+
 API_URL = os.environ.get("API_URL", "http://127.0.0.1:8000")
 
 st.set_page_config(
@@ -153,10 +154,59 @@ with st.sidebar:
 
     st.markdown("---")
 
-    diag_1 = st.text_input("Primary diagnosis (ICD-9)", value="250.01")
+    diagnosis_options = {
+        "Diabetes": "250.00",
+        "Cardiovascular disease": "410",
+        "Respiratory disease": "480",
+        "Digestive disease": "530",
+        "Genitourinary disease": "590",
+        "Cancer": "199",
+        "Injury": "800",
+        "External cause / outpatient": "V58",
+        "Other": "999"
+    }
+    diagnosis_label = st.selectbox("Primary diagnosis category", list(diagnosis_options.keys()))
+    diag_1 = diagnosis_options[diagnosis_label]
+
     diabetes_med = st.selectbox("On diabetes medication?", ["Yes", "No"])
     change = st.selectbox("Medication changed during stay?", ["No", "Ch"])
     insulin = st.selectbox("Insulin", ["No", "Steady", "Up", "Down"])
+
+    st.markdown("---")
+
+    with st.expander("Additional clinical data"):
+        diag_2_label = st.selectbox("Secondary diagnosis category", list(diagnosis_options.keys()), index=1, key="diag_2")
+        diag_2 = diagnosis_options[diag_2_label]
+        diag_3_label = st.selectbox("Tertiary diagnosis category", list(diagnosis_options.keys()), index=1, key="diag_3")
+        diag_3 = diagnosis_options[diag_3_label]
+        number_diagnoses = st.number_input("Number of diagnoses on record", min_value=1, max_value=16, value=5)
+
+        admission_type_options = {
+            "Emergency": 1, "Urgent": 2, "Elective": 3, "Newborn": 4,
+            "Trauma Center": 7
+        }
+        admission_type_label = st.selectbox("Admission type", list(admission_type_options.keys()))
+        admission_type_id = admission_type_options[admission_type_label]
+
+        admission_source_options = {
+            "Emergency Room": 7, "Physician Referral": 1, "Clinic Referral": 2,
+            "Transfer from a hospital": 4, "Transfer from a Skilled Nursing Facility (SNF)": 5,
+            "Transfer from another health care facility": 6,
+        }
+        admission_source_label = st.selectbox("Admission source", list(admission_source_options.keys()))
+        admission_source_id = admission_source_options[admission_source_label]
+
+        num_lab_procedures = st.number_input("Number of lab procedures", min_value=1, max_value=132, value=45)
+        num_procedures = st.number_input("Number of non-lab procedures", min_value=0, max_value=6, value=1)
+
+        other_meds = st.multiselect(
+            "Other active diabetes medications",
+            ["metformin", "repaglinide", "nateglinide", "chlorpropamide", "glimepiride",
+             "acetohexamide", "glipizide", "glyburide", "tolbutamide", "pioglitazone",
+             "rosiglitazone", "acarbose", "miglitol", "troglitazone", "tolazamide",
+             "examide", "citoglipton", "glyburide-metformin", "glipizide-metformin",
+             "glimepiride-pioglitazone", "metformin-rosiglitazone", "metformin-pioglitazone"]
+        )
 
     st.markdown("---")
     predict_clicked = st.button("Predict Readmission Risk", type="primary", use_container_width=True)
@@ -165,44 +215,53 @@ with st.sidebar:
 # ---- Main panel ----
 if not predict_clicked:
     st.info("Fill in patient data on the left and click **Predict Readmission Risk** to see the assessment.")
-    
-    
+
+
 if predict_clicked:
+    other_med_names = [
+        "metformin", "repaglinide", "nateglinide", "chlorpropamide", "glimepiride",
+        "acetohexamide", "glipizide", "glyburide", "tolbutamide", "pioglitazone",
+        "rosiglitazone", "acarbose", "miglitol", "troglitazone", "tolazamide",
+        "examide", "citoglipton", "glyburide-metformin", "glipizide-metformin",
+        "glimepiride-pioglitazone", "metformin-rosiglitazone", "metformin-pioglitazone"
+    ]
+    other_med_status = {name: ("Steady" if name in other_meds else "No") for name in other_med_names}
+
     payload = {
         "race": race,
         "gender": gender,
         "age": age,
-        "admission_type_id": 1,
+        "admission_type_id": admission_type_id,
         "discharge_disposition_id": discharge_disposition_id,
-        "admission_source_id": 7,
+        "admission_source_id": admission_source_id,
         "time_in_hospital": time_in_hospital,
-        "num_lab_procedures": 45,
-        "num_procedures": 1,
+        "num_lab_procedures": num_lab_procedures,
+        "num_procedures": num_procedures,
         "num_medications": num_medications,
         "number_outpatient": number_outpatient,
         "number_emergency": number_emergency,
         "number_inpatient": number_inpatient,
         "diag_1": diag_1,
-        "diag_2": "428",
-        "diag_3": "401",
-        "number_diagnoses": 5,
+        "diag_2": diag_2,
+        "diag_3": diag_3,
+        "number_diagnoses": number_diagnoses,
         "change": change,
         "diabetesMed": diabetes_med,
-        "metformin": "No", "repaglinide": "No", "nateglinide": "No",
-        "chlorpropamide": "No", "glimepiride": "No", "acetohexamide": "No",
-        "glipizide": "No", "glyburide": "No", "tolbutamide": "No",
-        "pioglitazone": "No", "rosiglitazone": "No", "acarbose": "No",
-        "miglitol": "No", "troglitazone": "No", "tolazamide": "No",
-        "examide": "No", "citoglipton": "No", "insulin": insulin,
-        "glyburide-metformin": "No", "glipizide-metformin": "No",
-        "glimepiride-pioglitazone": "No", "metformin-rosiglitazone": "No",
-        "metformin-pioglitazone": "No"
+        "insulin": insulin,
+        **other_med_status,
     }
 
-    with st.spinner("Analyzing patient risk..."):
-        response = requests.post(f"{API_URL}/explain", json=payload)
+    try:
+        with st.spinner("Analyzing patient risk..."):
+            response = requests.post(f"{API_URL}/explain", json=payload, timeout=10)
+    except requests.exceptions.ConnectionError:
+        st.error(f"Could not reach the API at {API_URL}. Is it running?")
+        response = None
+    except requests.exceptions.Timeout:
+        st.error("The API took too long to respond. Please try again.")
+        response = None
 
-    if response.status_code == 200:
+    if response is not None and response.status_code == 200:
         result = response.json()
         prob = result["readmission_probability"]
         risk = result["risk_level"]
@@ -239,5 +298,5 @@ if predict_clicked:
             </div>
             """, unsafe_allow_html=True)
 
-    else:
+    elif response is not None:
         st.error(f"API error: {response.status_code} — {response.text}")

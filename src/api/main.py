@@ -6,6 +6,8 @@ Exposes /predict and /explain endpoints for 30-day readmission risk.
 import sys
 sys.path.append('.')
 
+import json
+
 import pandas as pd
 import xgboost as xgb
 import shap
@@ -14,8 +16,14 @@ from fastapi import FastAPI, HTTPException
 from src.api.schemas import PatientData, PredictionResponse, ExplanationResponse
 from src.features.engineering import engineer_features
 
-# Clinical threshold — optimized for recall in Fase 4
-THRESHOLD = 0.4
+# Clinical threshold — read from the metadata saved by src/models/train.py so
+# it always matches the currently loaded model. Falls back to 0.4 (the
+# deployed default) if the model was produced before metadata existed.
+try:
+    with open('data/processed/model_metadata.json') as f:
+        THRESHOLD = json.load(f)['threshold']
+except FileNotFoundError:
+    THRESHOLD = 0.4
 
 app = FastAPI(
     title="Clinical Risk Engine",
