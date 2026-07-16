@@ -4,7 +4,7 @@ Pydantic schemas defining the expected shape of API requests and responses.
 
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 # Valid codes per the UCI IDS_mapping.csv — anything outside these sets is not
 # a real clinical code and must be rejected rather than fed to the model.
@@ -26,48 +26,60 @@ ChangeFlag = Literal["No", "Ch"]
 class PatientData(BaseModel):
     """Raw patient data as expected from the client, before feature engineering."""
 
-    race: Race = Field(..., example="Caucasian")
-    gender: Gender = Field(..., example="Female")
-    age: AgeRange = Field(..., example="[50-60)")
-    admission_type_id: int = Field(..., example=1)
-    discharge_disposition_id: int = Field(..., example=1)
-    admission_source_id: int = Field(..., example=7)
-    time_in_hospital: int = Field(..., example=3)
-    num_lab_procedures: int = Field(..., example=45)
-    num_procedures: int = Field(..., example=1)
-    num_medications: int = Field(..., example=15)
-    number_outpatient: int = Field(..., example=0)
-    number_emergency: int = Field(..., example=0)
-    number_inpatient: int = Field(..., example=0)
-    diag_1: str = Field(..., example="250.01")
-    diag_2: str = Field(..., example="428")
-    diag_3: str = Field(..., example="401")
-    number_diagnoses: int = Field(..., example=5)
-    change: ChangeFlag = Field(..., example="No")
-    diabetesMed: YesNo = Field(..., example="Yes")
-    metformin: MedicationStatus = Field(..., example="No")
-    repaglinide: MedicationStatus = Field(..., example="No")
-    nateglinide: MedicationStatus = Field(..., example="No")
-    chlorpropamide: MedicationStatus = Field(..., example="No")
-    glimepiride: MedicationStatus = Field(..., example="No")
-    acetohexamide: MedicationStatus = Field(..., example="No")
-    glipizide: MedicationStatus = Field(..., example="No")
-    glyburide: MedicationStatus = Field(..., example="No")
-    tolbutamide: MedicationStatus = Field(..., example="No")
-    pioglitazone: MedicationStatus = Field(..., example="No")
-    rosiglitazone: MedicationStatus = Field(..., example="No")
-    acarbose: MedicationStatus = Field(..., example="No")
-    miglitol: MedicationStatus = Field(..., example="No")
-    troglitazone: MedicationStatus = Field(..., example="No")
-    tolazamide: MedicationStatus = Field(..., example="No")
-    examide: MedicationStatus = Field(..., example="No")
-    citoglipton: MedicationStatus = Field(..., example="No")
-    insulin: MedicationStatus = Field(..., example="Steady")
-    glyburide_metformin: MedicationStatus = Field(..., alias="glyburide-metformin", example="No")
-    glipizide_metformin: MedicationStatus = Field(..., alias="glipizide-metformin", example="No")
-    glimepiride_pioglitazone: MedicationStatus = Field(..., alias="glimepiride-pioglitazone", example="No")
-    metformin_rosiglitazone: MedicationStatus = Field(..., alias="metformin-rosiglitazone", example="No")
-    metformin_pioglitazone: MedicationStatus = Field(..., alias="metformin-pioglitazone", example="No")
+    model_config = ConfigDict(populate_by_name=True)
+
+    race: Race = Field(..., json_schema_extra={"example": "Caucasian"})
+    gender: Gender = Field(..., json_schema_extra={"example": "Female"})
+    age: AgeRange = Field(..., json_schema_extra={"example": "[50-60)"})
+    admission_type_id: int = Field(..., json_schema_extra={"example": 1})
+    discharge_disposition_id: int = Field(..., json_schema_extra={"example": 1})
+    admission_source_id: int = Field(..., json_schema_extra={"example": 7})
+    time_in_hospital: int = Field(..., json_schema_extra={"example": 3})
+    num_lab_procedures: int = Field(..., json_schema_extra={"example": 45})
+    num_procedures: int = Field(..., json_schema_extra={"example": 1})
+    num_medications: int = Field(..., json_schema_extra={"example": 15})
+    number_outpatient: int = Field(..., json_schema_extra={"example": 0})
+    number_emergency: int = Field(..., json_schema_extra={"example": 0})
+    number_inpatient: int = Field(..., json_schema_extra={"example": 0})
+    diag_1: str = Field(..., json_schema_extra={"example": "250.01"})
+    diag_2: str = Field(..., json_schema_extra={"example": "428"})
+    diag_3: str = Field(..., json_schema_extra={"example": "401"})
+    number_diagnoses: int = Field(..., json_schema_extra={"example": 5})
+    change: ChangeFlag = Field(..., json_schema_extra={"example": "No"})
+    diabetesMed: YesNo = Field(..., json_schema_extra={"example": "Yes"})
+    metformin: MedicationStatus = Field(..., json_schema_extra={"example": "No"})
+    repaglinide: MedicationStatus = Field(..., json_schema_extra={"example": "No"})
+    nateglinide: MedicationStatus = Field(..., json_schema_extra={"example": "No"})
+    chlorpropamide: MedicationStatus = Field(..., json_schema_extra={"example": "No"})
+    glimepiride: MedicationStatus = Field(..., json_schema_extra={"example": "No"})
+    acetohexamide: MedicationStatus = Field(..., json_schema_extra={"example": "No"})
+    glipizide: MedicationStatus = Field(..., json_schema_extra={"example": "No"})
+    glyburide: MedicationStatus = Field(..., json_schema_extra={"example": "No"})
+    tolbutamide: MedicationStatus = Field(..., json_schema_extra={"example": "No"})
+    pioglitazone: MedicationStatus = Field(..., json_schema_extra={"example": "No"})
+    rosiglitazone: MedicationStatus = Field(..., json_schema_extra={"example": "No"})
+    acarbose: MedicationStatus = Field(..., json_schema_extra={"example": "No"})
+    miglitol: MedicationStatus = Field(..., json_schema_extra={"example": "No"})
+    troglitazone: MedicationStatus = Field(..., json_schema_extra={"example": "No"})
+    tolazamide: MedicationStatus = Field(..., json_schema_extra={"example": "No"})
+    examide: MedicationStatus = Field(..., json_schema_extra={"example": "No"})
+    citoglipton: MedicationStatus = Field(..., json_schema_extra={"example": "No"})
+    insulin: MedicationStatus = Field(..., json_schema_extra={"example": "Steady"})
+    glyburide_metformin: MedicationStatus = Field(
+        ..., alias="glyburide-metformin", json_schema_extra={"example": "No"}
+    )
+    glipizide_metformin: MedicationStatus = Field(
+        ..., alias="glipizide-metformin", json_schema_extra={"example": "No"}
+    )
+    glimepiride_pioglitazone: MedicationStatus = Field(
+        ..., alias="glimepiride-pioglitazone", json_schema_extra={"example": "No"}
+    )
+    metformin_rosiglitazone: MedicationStatus = Field(
+        ..., alias="metformin-rosiglitazone", json_schema_extra={"example": "No"}
+    )
+    metformin_pioglitazone: MedicationStatus = Field(
+        ..., alias="metformin-pioglitazone", json_schema_extra={"example": "No"}
+    )
 
     @field_validator("admission_type_id")
     @classmethod
@@ -90,20 +102,18 @@ class PatientData(BaseModel):
             raise ValueError(f"admission_source_id must be one of {sorted(VALID_ADMISSION_SOURCE_IDS)}")
         return v
 
-    class Config:
-        populate_by_name = True
 
 class PredictionResponse(BaseModel):
     """Response returned by the /predict endpoint."""
-    
-    readmission_probability: float = Field(..., example=0.42)
-    risk_level: str = Field(..., example="high")
-    threshold_used: float = Field(..., example=0.4)
+
+    readmission_probability: float = Field(..., json_schema_extra={"example": 0.42})
+    risk_level: str = Field(..., json_schema_extra={"example": "high"})
+    threshold_used: float = Field(..., json_schema_extra={"example": 0.4})
 
 
 class FeatureContribution(BaseModel):
     """A single feature's contribution to a prediction."""
-    
+
     feature: str
     value: str
     shap_value: float
@@ -111,7 +121,7 @@ class FeatureContribution(BaseModel):
 
 class ExplanationResponse(BaseModel):
     """Response returned by the /explain endpoint."""
-    
-    readmission_probability: float = Field(..., example=0.42)
-    risk_level: str = Field(..., example="high")
+
+    readmission_probability: float = Field(..., json_schema_extra={"example": 0.42})
+    risk_level: str = Field(..., json_schema_extra={"example": "high"})
     top_contributing_factors: list[FeatureContribution]
