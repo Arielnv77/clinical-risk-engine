@@ -1,0 +1,24 @@
+# Datos — nunca al repo
+data/raw/*
+data/processed/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# Python
+__pycache__/
+*.pyc
+.env
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Entornos
+venv/
+.venv/
+
+# macOS
+.DS_Store
+
+# Pytest
+.pytest_cache/
